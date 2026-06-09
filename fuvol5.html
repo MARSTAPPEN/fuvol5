@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FUVOL 5</title>
+<style>
+:root {
+  --verde-cancha: #3a7d44;
+  --verde-cancha-claro: #4a9455;
+  --verde-ui: #1e6b35;
+  --verde-hover: #155a2b;
+  --amarillo: #f0c040;
+  --texto: #1a1a1a;
+  --texto-suave: #666;
+  --borde: #d0d0d0;
+  --fondo: #f5f5f2;
+  --blanco: #ffffff;
+  --rojo: #c0392b;
+  --rojo-claro: #fdf0ef;
+  --azul: #2563eb;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--fondo); color: var(--texto); min-height: 100vh; }
+
+/* ---- UTILIDADES ---- */
+.pantalla { display: none; }
+.pantalla.activa { display: flex; flex-direction: column; min-height: 100vh; }
+
+.header {
+  background: var(--verde-ui);
+  color: white;
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+.header-titulo { font-size: 1.15rem; font-weight: 800; }
+.header-sub { font-size: 0.75rem; opacity: 0.7; margin-top: 1px; }
+.badge-paso {
+  background: rgba(255,255,255,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+footer {
+  text-align: center;
+  padding: 0.8rem;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  border-top: 1px solid var(--borde);
+  flex-shrink: 0;
+}
+
+/* ---- INICIO ---- */
+.inicio-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+.inicio-icono { font-size: 4.5rem; margin-bottom: 1.2rem; }
+.inicio-titulo { font-size: 2rem; font-weight: 900; color: var(--verde-ui); line-height: 1.15; margin-bottom: 0.8rem; }
+.inicio-desc { color: var(--texto-suave); line-height: 1.6; max-width: 380px; margin-bottom: 2rem; font-size: 0.95rem; }
+.pasos {
+  display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; margin-bottom: 2rem;
+}
+.paso {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  width: 130px;
+  text-align: center;
+}
+.paso-num { font-size: 1.4rem; font-weight: 900; color: var(--verde-ui); display: block; }
+.paso-texto { font-size: 0.8rem; color: var(--texto-suave); margin-top: 3px; }
+
+.btn { border: none; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn:active { transform: scale(0.97); }
+.btn-verde {
+  background: var(--verde-ui); color: white;
+  padding: 0.85rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 700;
+}
+.btn-verde:hover { background: var(--verde-hover); }
+.btn-verde:disabled { background: var(--borde); color: var(--texto-suave); cursor: not-allowed; transform: none; }
+.btn-amarillo {
+  background: var(--amarillo); color: #1a1a1a;
+  padding: 0.85rem 2rem; border-radius: 50px; font-size: 1rem; font-weight: 700;
+}
+.btn-amarillo:hover { background: #e0b030; }
+.btn-outline {
+  background: white; color: var(--verde-ui);
+  border: 2px solid var(--verde-ui);
+  padding: 0.75rem 1.8rem; border-radius: 50px; font-size: 0.95rem; font-weight: 700;
+}
+.btn-outline:hover { background: #e8f5ed; }
+
+/* ---- DRAFT ---- */
+.draft-layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  overflow: hidden;
+}
+
+/* Cancha lado izquierdo */
+.cancha-panel {
+  background: var(--verde-cancha);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 420px;
+}
+.cancha-nombre-equipo {
+  color: white;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-align: center;
+  margin-bottom: 0.6rem;
+  opacity: 0.9;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* SVG cancha */
+.cancha-svg-wrap {
+  width: 100%;
+  max-width: 240px;
+  position: relative;
+}
+
+/* Panel derecho: sorteo + jugadores */
+.selector-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--blanco);
+}
+
+.sorteo-area {
+  padding: 1rem;
+  border-bottom: 1px solid var(--borde);
+  text-align: center;
+}
+.sorteo-equipo-nombre {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--verde-ui);
+  margin-bottom: 0.2rem;
+}
+.sorteo-equipo-desc {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin-bottom: 0.8rem;
+}
+.posicion-pedida {
+  background: var(--verde-ui);
+  color: white;
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+.instruccion-sorteo {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+  margin-bottom: 0.7rem;
+}
+
+.jugadores-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jugador-card {
+  background: var(--fondo);
+  border: 1.5px solid var(--borde);
+  border-radius: 10px;
+  padding: 0.65rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.jugador-card:hover { border-color: var(--verde-ui); background: #e8f5ed; }
+.jugador-card.usado { opacity: 0.3; pointer-events: none; }
+.jugador-rating {
+  background: var(--verde-ui); color: white;
+  font-weight: 800; font-size: 0.9rem;
+  padding: 4px 8px; border-radius: 6px;
+  min-width: 36px; text-align: center;
+}
+.jugador-nombre-card { font-weight: 700; font-size: 0.9rem; }
+.jugador-desc-card { font-size: 0.75rem; color: var(--texto-suave); font-style: italic; }
+
+.btn-dado-wrap {
+  padding: 0.8rem;
+  border-top: 1px solid var(--borde);
+  text-align: center;
+}
+.btn-dado {
+  background: var(--amarillo); color: #1a1a1a;
+  border: none; cursor: pointer;
+  padding: 0.7rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.95rem; font-weight: 700;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.1s;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.btn-dado:hover { background: #e0b030; }
+.btn-dado:active { transform: scale(0.96); }
+.btn-dado:disabled { background: var(--borde); color: var(--texto-suave); cursor: not-allowed; transform: none; }
+
+.dado-anim { animation: dado-spin 0.4s; }
+@keyframes dado-spin {
+  0%{transform:rotate(0) scale(1)} 25%{transform:rotate(-20deg) scale(1.2)} 75%{transform:rotate(20deg) scale(1.2)} 100%{transform:rotate(0) scale(1)}
+}
+
+
+/* ---- DRAFT: selección de jugador y slot ---- */
+.seleccion-actual {
+  margin-top: 0.6rem;
+  font-size: 0.84rem;
+  color: var(--texto-suave);
+  min-height: 1.2rem;
+}
+
+.player-pos-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.player-pos-badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #dff0e4;
+  color: var(--verde-ui);
+  font-weight: 700;
+}
+
+.jugador-card.selected {
+  border-color: var(--azul);
+  background: #eaf2ff;
+}
+
+.jugador-card.compatible {
+  border-color: var(--verde-ui);
+}
+
+.jugador-card.incompatible {
+  opacity: 0.35;
+}
+
+.cancha-svg-wrap g {
+  cursor: pointer;
+}
+
+.cancha-svg-wrap g.slot-disponible circle {
+  stroke: var(--verde-ui) !important;
+  stroke-width: 3 !important;
+  fill: rgba(30, 107, 53, 0.18) !important;
+}
+
+.cancha-svg-wrap g.slot-seleccionado circle {
+  stroke: var(--azul) !important;
+  stroke-width: 3 !important;
+  fill: rgba(37, 99, 235, 0.18) !important;
+}
+
+.cancha-svg-wrap g.slot-ocupado circle {
+  stroke: rgba(255,255,255,0.75) !important;
+  stroke-width: 2 !important;
+  fill: rgba(255,255,255,0.92) !important;
+}
+
+/* ---- TORNEO ---- */
+.torneo-layout {
+  flex: 1;
+  padding: 1.2rem;
+  max-width: 700px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.torneo-titulo { font-size: 1.1rem; font-weight: 800; color: var(--verde-ui); }
+.torneo-subtitulo { font-size: 0.85rem; color: var(--texto-suave); }
+
+.bracket {
+  display: flex;
+  gap: 0.8rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.ronda {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  min-width: 160px;
+}
+.ronda-titulo {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--texto-suave);
+  font-weight: 700;
+  text-align: center;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--borde);
+}
+.partido-bracket {
+  background: var(--blanco);
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+.equipo-bracket {
+  padding: 6px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.equipo-bracket:first-child { border-bottom: 1px solid var(--borde); }
+.equipo-bracket.ganador { background: #e8f5ed; font-weight: 700; color: var(--verde-ui); }
+.equipo-bracket.perdedor { color: var(--texto-suave); }
+.bracket-gol { font-weight: 800; font-size: 0.95rem; min-width: 16px; text-align: right; }
+.bracket-pendiente { color: var(--borde); font-size: 0.8rem; font-style: italic; text-align: center; padding: 10px; }
+
+.partido-info-box {
+  background: var(--blanco);
+  border: 1.5px solid var(--verde-ui);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+.partido-info-titulo { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave); margin-bottom: 0.5rem; font-weight: 700; }
+.partido-vs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--verde-ui);
+  margin-bottom: 0.8rem;
+}
+.partido-vs-sep { color: var(--texto-suave); font-size: 0.9rem; font-weight: 400; }
+
+.equipo-preview {
+  background: var(--fondo);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+.equipo-preview-titulo { font-weight: 700; margin-bottom: 4px; color: var(--verde-ui); font-size: 0.75rem; }
+.preview-jugador { color: var(--texto-suave); margin-bottom: 2px; display: flex; justify-content: space-between; }
+.preview-rating { font-weight: 600; color: var(--texto); }
+
+/* ---- RESULTADO PARTIDO ---- */
+.resultado-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.2rem;
+  text-align: center;
+  gap: 1rem;
+}
+.resultado-emoji { font-size: 4.5rem; }
+.resultado-marcador {
+  font-size: 3rem;
+  font-weight: 900;
+  padding: 0.5rem 1.5rem;
+  border-radius: 12px;
+}
+.resultado-win { background: #e8f5ed; color: var(--verde-ui); }
+.resultado-lose { background: var(--rojo-claro); color: var(--rojo); }
+.resultado-titulo { font-size: 1.8rem; font-weight: 900; }
+.resultado-frase { font-size: 1rem; color: var(--texto-suave); max-width: 360px; line-height: 1.5; }
+.mvp-box {
+  background: var(--blanco);
+  border: 2px solid var(--amarillo);
+  border-radius: 12px;
+  padding: 0.9rem 1.3rem;
+  width: 100%;
+  max-width: 320px;
+}
+.mvp-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-suave); margin-bottom: 4px; }
+.mvp-nombre-res { font-size: 1.2rem; font-weight: 800; color: var(--verde-ui); }
+.mvp-desc-res { font-size: 0.85rem; color: var(--texto-suave); margin-top: 2px; }
+
+/* ---- CAMPEÓN ---- */
+.campeon-body {
+  flex: 1;
+  background: linear-gradient(160deg, #1e6b35 0%, #3a7d44 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.2rem;
+  text-align: center;
+  color: white;
+  gap: 1rem;
+}
+.campeon-trofeo { font-size: 5rem; }
+.campeon-titulo { font-size: 2.2rem; font-weight: 900; }
+.campeon-sub { font-size: 1.1rem; opacity: 0.85; max-width: 340px; line-height: 1.5; }
+.campeon-equipo {
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  width: 100%;
+  max-width: 340px;
+  font-size: 0.9rem;
+  line-height: 1.8;
+}
+.campeon-equipo-titulo { font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+
+/* ---- MOBILE ---- */
+@media (max-width: 560px) {
+  .draft-layout { grid-template-columns: 1fr; }
+  .cancha-panel { min-height: 300px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== PANTALLA INICIO ===================== -->
+<div id="p-inicio" class="pantalla activa">
+  <div class="header">
+    <div>
+      <div class="header-titulo">FÚVOL 5</div>
+      <div class="header-sub">Hacé como Marce y armá el mejor futbol 5 posible.</div>
+    </div>
+    <span style="font-size:1.8rem">⚽</span>
+  </div>
+  <div class="inicio-body">
+    <div class="inicio-icono">🏆</div>
+    <h1 class="inicio-titulo">Tirá el dado.<br>Armá el mejor 5.</h1>
+    <p class="inicio-desc">Sorteás un equipo, elegís el mejor (o peor) jugador disponible y formás tu equipo de ensueño de fútbol 5. Después, a ganar la Malvinas Cup.</p>
+    <div class="pasos">
+      <div class="paso"><span class="paso-num">01</span><span class="paso-texto">Sortea un equipo</span></div>
+      <div class="paso"><span class="paso-num">02</span><span class="paso-texto">Elegis cada jugador</span></div>
+      <div class="paso"><span class="paso-num">03</span><span class="paso-texto">Competí</span></div>
+    </div>
+    <button class="btn btn-verde" onclick="iniciarJuego()">Jugar ahora →</button>
+  </div>
+  <footer>Fúvol 5 — inspirado en 7a0.com.br, en homenaje al Poliderpotivo San Juan</footer>
+</div>
+
+<!-- ===================== PANTALLA DRAFT ===================== -->
+<div id="p-draft" class="pantalla">
+  <div class="header">
+    <div>
+      <div class="header-titulo" id="draft-header">Fúvol 5</div>
+      <div class="header-sub" id="draft-header-sub">Armando tu equipo...</div>
+    </div>
+    <span class="badge-paso" id="draft-paso-badge">1 / 5</span>
+  </div>
+
+  <div class="draft-layout">
+    <!-- IZQUIERDA: Cancha en tiempo real -->
+    <div class="cancha-panel">
+      <div class="cancha-nombre-equipo">Tu equipo</div>
+      <div class="cancha-svg-wrap">
+        <svg id="cancha-svg" viewBox="0 0 200 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+          <!-- Fondo cancha -->
+          <rect width="200" height="300" fill="#3a7d44" rx="6"/>
+          <!-- Líneas de franjas alternadas -->
+          <rect x="0" y="0" width="200" height="30" fill="#3f8a4a" opacity="0.5"/>
+          <rect x="0" y="60" width="200" height="30" fill="#3f8a4a" opacity="0.5"/>
+          <rect x="0" y="120" width="200" height="30" fill="#3f8a4a" opacity="0.5"/>
+          <rect x="0" y="180" width="200" height="30" fill="#3f8a4a" opacity="0.5"/>
+          <rect x="0" y="240" width="200" height="30" fill="#3f8a4a" opacity="0.5"/>
+          <!-- Borde -->
+          <rect x="6" y="6" width="188" height="288" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5" rx="3"/>
+          <!-- Línea media -->
+          <line x1="6" y1="150" x2="194" y2="150" stroke="rgba(255,255,255,0.6)" stroke-width="1.2"/>
+          <!-- Círculo central -->
+          <circle cx="100" cy="150" r="28" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+          <circle cx="100" cy="150" r="2" fill="rgba(255,255,255,0.6)"/>
+          <!-- Área propia (abajo) -->
+          <rect x="58" y="258" width="84" height="36" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+          <!-- Arco propio -->
+          <rect x="78" y="290" width="44" height="8" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+          <!-- Área rival (arriba) -->
+          <rect x="58" y="6" width="84" height="36" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.2"/>
+          <!-- Arco rival -->
+          <rect x="78" y="2" width="44" height="8" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>
+
+          <!-- Slots de jugadores: GK, DF1, DF2, FW1, FW2 -->
+          <!-- Posiciones: y=272 GK | y=195 DF1 DF2 | y=110 FW1 FW2 -->
+          <!-- GK -->
+          <g id="slot-0">
+            <circle cx="100" cy="272" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+            <text x="100" y="268" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">ARQ</text>
+            <text x="100" y="279" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">?</text>
+          </g>
+          <!-- DF1 -->
+          <g id="slot-1">
+            <circle cx="62" cy="200" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+            <text x="62" y="196" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">DEF</text>
+            <text x="62" y="207" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">?</text>
+          </g>
+          <!-- DF2 -->
+          <g id="slot-2">
+            <circle cx="138" cy="200" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+            <text x="138" y="196" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">DEF</text>
+            <text x="138" y="207" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">?</text>
+          </g>
+          <!-- FW1 -->
+          <g id="slot-3">
+            <circle cx="62" cy="110" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+            <text x="62" y="106" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">DEL</text>
+            <text x="62" y="117" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">?</text>
+          </g>
+          <!-- FW2 -->
+          <g id="slot-4">
+            <circle cx="138" cy="110" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+            <text x="138" y="106" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">DEL</text>
+            <text x="138" y="117" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">?</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- DERECHA: Sorteo + lista jugadores -->
+    <div class="selector-panel">
+      <div class="sorteo-area">
+        <div id="posicion-pedida-badge" class="posicion-pedida">🎯 Elegí slot libre</div>
+        <div class="sorteo-equipo-nombre" id="equipo-sorteado-nombre">— — —</div>
+        <div class="sorteo-equipo-desc" id="equipo-sorteado-desc">Tirá el dado para ver qué equipo te toca. Después elegís un jugador y lo ubicás en un slot compatible.</div>
+        <div class="instruccion-sorteo" id="instruccion-sorteo">Primero elegí un jugador del equipo sorteado; después tocá un slot libre en la cancha.</div>
+        <div class="seleccion-actual" id="seleccion-actual">Ningún jugador elegido todavía</div>
+      </div>
+
+      <div class="jugadores-scroll" id="jugadores-scroll">
+        <div style="text-align:center; color:var(--texto-suave); font-size:0.85rem; padding: 2rem 1rem;">
+          Tirá el dado para ver los jugadores disponibles
+        </div>
+      </div>
+
+      <div class="btn-dado-wrap">
+        <button class="btn-dado" id="btn-dado" onclick="tirarDado()">
+          <span id="dado-emoji">🎲</span>
+          <span id="dado-texto">Tirar el dado</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PANTALLA TORNEO ===================== -->
+<div id="p-torneo" class="pantalla">
+  <div class="header">
+    <div>
+      <div class="header-titulo">Malvinas Cup</div>
+      <div class="header-sub" id="torneo-header-sub">Cuartos de Final</div>
+    </div>
+    <span class="badge-paso" id="torneo-ronda-badge">Cuartos</span>
+  </div>
+
+  <div class="torneo-layout">
+    <div>
+      <div class="torneo-titulo" id="torneo-titulo">El Torneo de los Pibes</div>
+      <div class="torneo-subtitulo" id="torneo-subtitulo">Pasá todas las rondas con tu equipo armado</div>
+    </div>
+
+    <!-- Bracket visual -->
+    <div class="bracket" id="bracket-visual"></div>
+
+    <!-- Info partido actual -->
+    <div class="partido-info-box" id="partido-info-box">
+      <div class="partido-info-titulo">Próximo partido</div>
+      <div class="partido-vs">
+        <span id="pv-local">Tu equipo</span>
+        <span class="partido-vs-sep">vs</span>
+        <span id="pv-rival">—</span>
+      </div>
+      <div id="pv-equipos-preview"></div>
+      <button class="btn btn-verde" style="width:100%" id="btn-jugar-partido" onclick="jugarPartido()">Jugar partido ⚽</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== PANTALLA RESULTADO PARTIDO ===================== -->
+<div id="p-resultado" class="pantalla">
+  <div class="header">
+    <div>
+      <div class="header-titulo">Resultado</div>
+      <div class="header-sub" id="res-ronda-label">Cuartos de Final</div>
+    </div>
+  </div>
+
+  <div class="resultado-body">
+    <div class="resultado-emoji" id="res-emoji">⚽</div>
+    <div class="resultado-titulo" id="res-titulo">Ganaron</div>
+    <div class="resultado-marcador resultado-win" id="res-marcador">3 – 1</div>
+    <div class="resultado-frase" id="res-frase">—</div>
+    <div class="mvp-box" id="res-mvp-box">
+      <div class="mvp-label">⭐ MVP del partido</div>
+      <div class="mvp-nombre-res" id="res-mvp-nombre">—</div>
+      <div class="mvp-desc-res" id="res-mvp-desc">—</div>
+    </div>
+    <button class="btn btn-verde" id="btn-continuar" onclick="continuar()">Continuar →</button>
+    <button class="btn btn-outline" onclick="irA('p-inicio'); resetearTodo()">Empezar de nuevo</button>
+  </div>
+</div>
+
+<!-- ===================== PANTALLA CAMPEÓN ===================== -->
+<div id="p-campeon" class="pantalla">
+  <div class="campeon-body">
+    <div class="campeon-trofeo">🏆</div>
+    <div class="campeon-titulo">¡Campeones!</div>
+    <div class="campeon-sub" id="campeon-sub">Tu equipo ganó el torneo entero. Los pibes no tienen techo.</div>
+    <div class="campeon-equipo" id="campeon-equipo-detalle"></div>
+    <div style="display:flex; gap:0.8rem; flex-wrap:wrap; justify-content:center; margin-top:0.5rem;">
+      <button class="btn btn-amarillo" onclick="irA('p-inicio'); resetearTodo()">Jugar de nuevo</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════════════
+//  BASE DE DATOS
+// ══════════════════════════════════════════════════════
+
+const EQUIPOS_BASE = [
+  {
+    nombre: "Polideportivo San Juan (2024)",
+    emoji: "🔰",
+    desc: "El mas grande de Tortuguitas",
+    jugadores: {
+      ARQ: [
+        { nombre: "Edgar", rating: 75, desc: "El diplomatico" },
+        { nombre: "Javi Ortiz", rating: 76, desc: "Cavani con IQ y manos" }
+      ],
+      DEF: [
+        { nombre: "Ariel Ortiz", rating: 79, desc: "Kevin Sexnon, cabra" },
+        { nombre: "Benjamín Robledo", rating: 83, desc: "Si dejaba la timba llegaba a primera" },
+        { nombre: "Alejo Brizuela", rating: 81, desc: "Juan Roncar Tristelme" }
+      ],
+      DEL: [
+        { nombre: "Santiago Massacane", rating: 83, desc: "Colorado mufa" },
+        { nombre: "Rodrigo Acciaresi", rating: 88, desc: "La materia es impenetrable" },
+        { nombre: "Marce", rating: 75, desc: "La experiencia" }
+      ]
+    }
+  },
+  {
+    nombre: "El poli (2026)",
+    emoji: "💎",
+    desc: "Lo que quedó del Poli",
+    jugadores: {
+      ARQ: [
+        { nombre: "Edgar", rating: 74, desc: "El diplomatico" },
+      ],
+      DEF: [
+        { nombre: "Benjamín Robledo", rating: 84, desc: "Si dejaba la timba llegaba a primera" },
+        { nombre: "Alejo Brizuela", rating: 80, desc: "Juan Roncar Tristelme" },
+        { nombre: "Juan Castro", rating: 82, desc: "Uruguayo Uruguayo" }
+      ],
+      DEL: [
+        { nombre: "Santiago Massacane", rating: 83, desc: "Colorado Mufa" },
+        { nombre: "Claudio Lopez", rating: 75, desc: "El paja-ro" },
+        { nombre: "Tomas Camoreano", rating: 85, desc: "Gallina" }
+      ]
+    }
+  },
+  {
+    nombre: "Economía (2023)",
+    emoji: "📊",
+    desc: "La promo de Rouco y Checha",
+    jugadores: {
+      ARQ: [
+        { nombre: "Pucheta", rating: 65, desc: "Esas nalgas son un delito para la sociedad " }
+      ],
+      DEF: [
+        { nombre: "Isaias Meyer", rating: 71, desc: "El Kaiser, caucásico" },
+        { nombre: "Benjamín Robledo", rating: 80, desc: "Antes de la timba" },
+        { nombre: "Agustín Caballero", rating: 77, desc: "añamemby!" },
+        { nombre: "Tomas Camoreano", rating: 81, desc: "gemelo malvado del añamemby" }
+      ],
+      DEL: [
+        { nombre: "Fabricio Cortez", rating: 84, desc: "Involucrado en el asesinato de Rodrigo Moyano" },
+        { nombre: "David Cecci", rating: 85, desc: "SIN COMENTARIOS" },
+        { nombre: "Santiago Massacane", rating: 81, desc: "El colo antes de concer el aguinaldo" },
+        { nombre: "Claudio Lopez", rating: 74, desc: "El Paja-ro" }
+      ]
+    }
+  },
+  {
+    nombre: "El grupo de Dios 2018",
+    emoji: "✞",
+    desc: "Eugenia desbloqua el grupo lcdtm",
+    jugadores: {
+      ARQ: [
+        { nombre: "Santiago Gallaso", rating: 76, desc: "El Russo" },
+        { nombre: "Lucas Pereyra", rating: 69, desc: "QEPD J7" }
+      ],
+      DEF: [
+        { nombre: "Santiago Ortiz", rating: 78, desc: "Fé" },
+        { nombre: "Fabricio Muñóz", rating: 77, desc: "Ni el se acordaba que estaba en 1°6" },
+        { nombre: "Agustín Caballero", rating: 78, desc: "añamemby antes el gym" }
+      ],
+      DEL: [
+        { nombre: "Santiago Massacane", rating: 80, desc: "colorado antes de descubrir la paja" },
+        { nombre: "David Cecci", rating: 82, desc: "DAVO" },
+        { nombre: "Tomas Camoreano", rating: 80, desc: "Gallina" },
+        { nombre: "Benjamín Robledo", rating: 81, desc: "Hail Grasa" }
+      ]
+    }
+  },
+  {
+    nombre: "PES 6 (2025)",
+    emoji: "🎮",
+    desc: "Equipo Fantasy con jugadores del PES 6",
+    jugadores: {
+      ARQ: [
+        { nombre: "Chaca", rating: 70, desc: "Bueno en el Dream League Soccer seguro" }
+      ],
+      DEF: [
+        { nombre: "Tomas Camoreano", rating: 74, desc: "No s serio el EFootball" },
+        { nombre: "Benjamín Robledo", rating: 87, desc: "Fiorentina, Calcio" },
+        { nombre: "Santiago Massacane", rating: 74, desc: "A jugar el FIFA 17 chaval" },
+      ],
+      DEL: [
+        { nombre: "Alejo Brizuela", rating: 88, desc: "Reyes es un vivo barbaro" },
+        { nombre: "Claudio Lopez", rating: 82, desc: "Real Zaragoza, Futevol fantastico" }
+      ]
+    }
+  }
+];
+
+const RIVALES = [
+  { nombre: "El grupo de Dios", emoji: "✞", rating: 75, desc: "El peor grupo existente" },
+  { nombre: "Polideportivo San Juan (2024)", emoji: "🔰", rating: 82, desc: "Crecieron en la calle" },
+  { nombre: "Economía (2023)", emoji: "📊", rating: 81, desc: "Promo poco seria" },
+  { nombre: "El Poli (2026)", emoji: "💎", rating: 78, desc: "Lo que quedó del Polideportivo San Juan" },
+  { nombre: "Sociales (2023)", emoji: "📖", rating: 782, desc: "Otra promo mas" },
+  { nombre: "Polideportivo Saint-Juan (2040)", emoji: "👑", rating: 86, desc: "Mezcla rara pero efectiva" },
+  { nombre: "PES 6 (2025)", emoji: "🎮", rating: 84, desc: "El rival final. Los mejores." }
+];
+
+const FRASES = {
+  gane: ["¡Son una máquina, pibes!", "¡De eso se trata el fútbol 5!", "¡Nadie los para hoy!", "¡Equipo perfecto!", "¡Los cracks del barrio!"],
+  perdi: ["La materia es impenetrable!", "El rival fue más.", "Buena la intent... no, en realidad fue un desastre.", "Próxima vez armá mejor el equipo.", "El técnico renuncia."],
+  mvp: ["metió dos y asistió el tercero", "no se cansó en ningún momento", "gambeteó a todo el mundo", "fue imposible de parar", "jugó de memoria todo el partido", "el mejor de la cancha sin dudas"]
+};
+
+const SLOTES = [
+  { key: "ARQ", label: "🥅 Arquero", short: "ARQ" },
+  { key: "DEF_IZQ", label: "🛡️ Defensor izq", short: "DEF I" },
+  { key: "DEF_DER", label: "🛡️ Defensor der", short: "DEF D" },
+  { key: "DEL_IZQ", label: "⚡ Delantero izq", short: "DEL I" },
+  { key: "DEL_DER", label: "⚡ Delantero der", short: "DEL D" }
+];
+
+const SLOT_CX = [100, 62, 138, 62, 138];
+const SLOT_CY = [272, 200, 200, 110, 110];
+
+function normalizarJugador(jugador, grupo, indexEnGrupo) {
+  let posiciones = [];
+  if (grupo === "ARQ") {
+    posiciones = ["ARQ"];
+  } else if (grupo === "DEF") {
+    posiciones = indexEnGrupo === 0 ? ["DEF_IZQ"] : indexEnGrupo === 1 ? ["DEF_DER"] : ["DEF_IZQ", "DEF_DER"];
+  } else if (grupo === "DEL") {
+    posiciones = indexEnGrupo === 0 ? ["DEL_IZQ"] : indexEnGrupo === 1 ? ["DEL_DER"] : ["DEL_IZQ", "DEL_DER"];
+  }
+
+  return {
+    ...jugador,
+    grupo,
+    posiciones
+  };
+}
+
+const EQUIPOS = EQUIPOS_BASE.map(equipo => ({
+  ...equipo,
+  jugadores: {
+    ARQ: equipo.jugadores.ARQ.map((j, i) => normalizarJugador(j, "ARQ", i)),
+    DEF: equipo.jugadores.DEF.map((j, i) => normalizarJugador(j, "DEF", i)),
+    DEL: equipo.jugadores.DEL.map((j, i) => normalizarJugador(j, "DEL", i))
+  }
+}));
+
+// ══════════════════════════════════════════════════════
+//  ESTADO
+// ══════════════════════════════════════════════════════
+
+let draftState = {
+  paso: 0,
+  equipoSorteado: null,
+  equiposUsados: [],
+  equipo: [null, null, null, null, null],
+  jugadorSeleccionado: null
+};
+
+let torneoState = {
+  bracket: [],
+  rondaActual: 0,
+  partidoActual: 0,
+  miEquipo: null
+};
+
+// ══════════════════════════════════════════════════════
+//  UTILIDADES
+// ══════════════════════════════════════════════════════
+
+function irA(id) {
+  document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+  document.getElementById(id).classList.add('activa');
+  window.scrollTo(0, 0);
+}
+
+function esc(texto) {
+  return String(texto).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function obtenerJugadoresEquipo(equipo) {
+  return Object.values(equipo.jugadores).flat();
+}
+
+function etiquetaPosicion(key) {
+  const map = {
+    ARQ: "Arquero",
+    DEF_IZQ: "Def. izq",
+    DEF_DER: "Def. der",
+    DEL_IZQ: "Del. izq",
+    DEL_DER: "Del. der"
+  };
+  return map[key] || key;
+}
+
+function puedeIrEnSlot(jugador, slotKey) {
+  return !!jugador && Array.isArray(jugador.posiciones) && jugador.posiciones.includes(slotKey);
+}
+
+function slotIndexPorKey(slotKey) {
+  return SLOTES.findIndex(s => s.key === slotKey);
+}
+
+function slotLibrePorKey(slotKey) {
+  const idx = slotIndexPorKey(slotKey);
+  return idx >= 0 && !draftState.equipo[idx];
+}
+
+function limpiarSeleccionVisual() {
+  document.querySelectorAll('.jugador-card').forEach(card => {
+    card.classList.remove('selected', 'compatible', 'incompatible');
+  });
+
+  SLOTES.forEach((slot, idx) => {
+    const g = document.getElementById(`slot-${idx}`);
+    if (!g) return;
+    g.classList.remove('slot-disponible', 'slot-seleccionado', 'slot-ocupado');
+    if (draftState.equipo[idx]) {
+      g.classList.add('slot-ocupado');
+    }
+  });
+}
+
+function actualizarCajaSeleccion() {
+  const caja = document.getElementById('seleccion-actual');
+  if (!caja) return;
+
+  if (!draftState.jugadorSeleccionado) {
+    caja.textContent = 'Ningún jugador elegido todavía';
+    return;
+  }
+
+  const j = draftState.jugadorSeleccionado;
+  caja.textContent = `${j.nombre} · puede jugar como ${j.posiciones.map(etiquetaPosicion).join(" / ")}`;
+}
+
+function actualizarMarcadoJugadores() {
+  const cards = [...document.querySelectorAll('.jugador-card')];
+  cards.forEach(card => {
+    const nombre = card.dataset.nombre;
+    const jugador = obtenerJugadoresEquipo(draftState.equipoSorteado).find(j => j.nombre === nombre);
+    if (!jugador) return;
+
+    const esSeleccionado = draftState.jugadorSeleccionado && draftState.jugadorSeleccionado.nombre === jugador.nombre;
+    card.classList.toggle('selected', esSeleccionado);
+
+    const compatibles = draftState.jugadorSeleccionado ? SLOTES.some(slot => slotLibrePorKey(slot.key) && puedeIrEnSlot(jugador, slot.key)) : false;
+    card.classList.toggle('compatible', compatibles);
+    card.classList.toggle('incompatible', draftState.jugadorSeleccionado ? !compatibles : false);
+  });
+}
+
+function actualizarSlotsCompatibles() {
+  SLOTES.forEach((slot, idx) => {
+    const g = document.getElementById(`slot-${idx}`);
+    if (!g) return;
+
+    g.classList.remove('slot-disponible', 'slot-seleccionado', 'slot-ocupado');
+    if (draftState.equipo[idx]) {
+      g.classList.add('slot-ocupado');
+      return;
+    }
+
+    if (!draftState.jugadorSeleccionado) {
+      return;
+    }
+
+    if (puedeIrEnSlot(draftState.jugadorSeleccionado, slot.key)) {
+      g.classList.add('slot-disponible');
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  CANCHA
+// ══════════════════════════════════════════════════════
+
+function renderSlotVacio(i) {
+  const g = document.getElementById(`slot-${i}`);
+  const cfg = SLOTES[i];
+  if (!g) return;
+
+  g.classList.remove('slot-disponible', 'slot-seleccionado', 'slot-ocupado');
+  g.innerHTML = `
+    <circle cx="${SLOT_CX[i]}" cy="${SLOT_CY[i]}" r="18" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" stroke-dasharray="3,2"/>
+    <text x="${SLOT_CX[i]}" y="${SLOT_CY[i]-4}" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="9" font-family="Segoe UI,sans-serif">${cfg.short}</text>
+    <text x="${SLOT_CX[i]}" y="${SLOT_CY[i]+7}" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="7" font-family="Segoe UI,sans-serif">+</text>
+  `;
+}
+
+function renderSlotOcupado(i, jugador) {
+  const nombre = jugador.nombre.length > 8 ? jugador.nombre.substring(0, 7) + '.' : jugador.nombre;
+  const g = document.getElementById(`slot-${i}`);
+  if (!g) return;
+
+  g.innerHTML = `
+    <circle cx="${SLOT_CX[i]}" cy="${SLOT_CY[i]}" r="18" fill="rgba(255,255,255,0.92)" stroke="#f0c040" stroke-width="2"/>
+    <text x="${SLOT_CX[i]}" y="${SLOT_CY[i]-4}" text-anchor="middle" fill="#1e6b35" font-size="8" font-weight="bold" font-family="Segoe UI,sans-serif">${nombre}</text>
+    <text x="${SLOT_CX[i]}" y="${SLOT_CY[i]+7}" text-anchor="middle" fill="#555" font-size="8" font-family="Segoe UI,sans-serif">${jugador.rating}</text>
+  `;
+  g.classList.add('slot-ocupado');
+}
+
+function configurarSlotsInteraccion() {
+  SLOTES.forEach((slot, idx) => {
+    const g = document.getElementById(`slot-${idx}`);
+    if (!g || g.dataset.configurado === "1") return;
+
+    g.dataset.configurado = "1";
+    g.addEventListener('click', () => seleccionarSlot(slot.key));
+    g.addEventListener('dragover', (ev) => {
+      if (!draftState.jugadorSeleccionado) return;
+      if (!slotLibrePorKey(slot.key)) return;
+      if (!puedeIrEnSlot(draftState.jugadorSeleccionado, slot.key)) return;
+      ev.preventDefault();
+      g.classList.add('slot-disponible');
+    });
+    g.addEventListener('dragleave', () => {
+      if (!draftState.equipo[idx]) g.classList.remove('slot-disponible');
+    });
+    g.addEventListener('drop', (ev) => {
+      ev.preventDefault();
+      seleccionarSlot(slot.key);
+    });
+  });
+}
+
+// ══════════════════════════════════════════════════════
+//  INICIO / RESET
+// ══════════════════════════════════════════════════════
+
+function resetearTodo() {
+  draftState = {
+    paso: 0,
+    equipoSorteado: null,
+    equiposUsados: [],
+    equipo: [null, null, null, null, null],
+    jugadorSeleccionado: null
+  };
+  torneoState = { bracket: [], rondaActual: 0, partidoActual: 0, miEquipo: null };
+}
+
+function iniciarJuego() {
+  resetearTodo();
+
+  for (let i = 0; i < 5; i++) renderSlotVacio(i);
+
+  document.getElementById('jugadores-scroll').innerHTML = `
+    <div style="text-align:center;color:var(--texto-suave);font-size:0.85rem;padding:2rem 1rem;">
+      Tirá el dado para ver el equipo que te toca
+    </div>`;
+  document.getElementById('equipo-sorteado-nombre').textContent = '— — —';
+  document.getElementById('equipo-sorteado-desc').textContent = 'Tirá el dado para ver qué equipo te toca. Después elegís un jugador y lo ubicás en un slot compatible.';
+  document.getElementById('instruccion-sorteo').textContent = 'Primero elegí un jugador del equipo sorteado; después tocá un slot libre en la cancha.';
+  document.getElementById('seleccion-actual').textContent = 'Ningún jugador elegido todavía';
+  document.getElementById('btn-dado').disabled = false;
+  document.getElementById('dado-texto').textContent = 'Tirar el dado';
+  document.getElementById('dado-emoji').textContent = '🎲';
+  actualizarDraftHeader();
+  actualizarMarcadoJugadores();
+  actualizarSlotsCompatibles();
+  irA('p-draft');
+}
+
+function actualizarDraftHeader() {
+  const paso = draftState.paso;
+  document.getElementById('draft-header-sub').textContent = 'Elegí un jugador y un slot compatible';
+  document.getElementById('draft-paso-badge').textContent = `${paso + 1} / 5`;
+  document.getElementById('posicion-pedida-badge').textContent = '🎯 Elegí slot libre';
+}
+
+// ══════════════════════════════════════════════════════
+//  DRAFT
+// ══════════════════════════════════════════════════════
+
+function tirarDado() {
+  if (draftState.equipoSorteado) return;
+
+  const btn = document.getElementById('btn-dado');
+  const emoji = document.getElementById('dado-emoji');
+  btn.disabled = true;
+  emoji.classList.add('dado-anim');
+
+  const disponibles = EQUIPOS.filter(e => !draftState.equiposUsados.includes(e.nombre));
+  const pool = disponibles.length > 0 ? disponibles : EQUIPOS;
+  const equipo = pool[Math.floor(Math.random() * pool.length)];
+
+  setTimeout(() => {
+    emoji.classList.remove('dado-anim');
+    draftState.equipoSorteado = equipo;
+    draftState.equiposUsados.push(equipo.nombre);
+    draftState.jugadorSeleccionado = null;
+
+    document.getElementById('equipo-sorteado-nombre').textContent = `${equipo.emoji} ${equipo.nombre}`;
+    document.getElementById('equipo-sorteado-desc').textContent = equipo.desc;
+    document.getElementById('instruccion-sorteo').textContent = 'Elegí un jugador del equipo y luego tocá un slot vacío compatible.';
+    document.getElementById('seleccion-actual').textContent = 'Ningún jugador elegido todavía';
+
+    renderJugadoresDraft();
+    actualizarMarcadoJugadores();
+    actualizarSlotsCompatibles();
+  }, 420);
+}
+
+function renderJugadoresDraft() {
+  const scroll = document.getElementById('jugadores-scroll');
+  const equipo = draftState.equipoSorteado;
+
+  if (!equipo) {
+    scroll.innerHTML = `
+      <div style="text-align:center;color:var(--texto-suave);padding:1.5rem">
+        Tirá el dado para ver los jugadores disponibles
+      </div>`;
+    return;
+  }
+
+  const jugadores = obtenerJugadoresEquipo(equipo).sort((a, b) => b.rating - a.rating);
+
+  scroll.innerHTML = jugadores.map(j => {
+    const posBadges = j.posiciones.map(p => `<span class="player-pos-badge">${etiquetaPosicion(p)}</span>`).join('');
+    const isSelected = draftState.jugadorSeleccionado && draftState.jugadorSeleccionado.nombre === j.nombre;
+    return `
+      <div class="jugador-card ${isSelected ? 'selected' : ''}" data-nombre="${esc(j.nombre)}" draggable="true"
+           onclick="seleccionarJugador('${esc(j.nombre)}')"
+           ondragstart="arrastrarJugador(event, '${esc(j.nombre)}')">
+        <div class="jugador-rating">${j.rating}</div>
+        <div style="flex:1">
+          <div class="jugador-nombre-card">${j.nombre}</div>
+          <div class="jugador-desc-card">${j.desc}</div>
+          <div class="player-pos-badges">${posBadges}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  actualizarMarcadoJugadores();
+}
+
+function arrastrarJugador(event, nombre) {
+  event.dataTransfer.setData('text/plain', nombre);
+  seleccionarJugador(nombre);
+}
+
+function seleccionarJugador(nombre) {
+  const equipo = draftState.equipoSorteado;
+  if (!equipo) return;
+
+  const jugador = obtenerJugadoresEquipo(equipo).find(j => j.nombre === nombre);
+  if (!jugador) return;
+
+  draftState.jugadorSeleccionado = jugador;
+  document.getElementById('instruccion-sorteo').textContent = 'Ahora tocá el slot de la cancha donde querés ubicarlo.';
+  actualizarCajaSeleccion();
+  actualizarMarcadoJugadores();
+  actualizarSlotsCompatibles();
+}
+
+function seleccionarSlot(slotKey) {
+  const jugador = draftState.jugadorSeleccionado;
+  if (!jugador) return;
+
+  const idx = slotIndexPorKey(slotKey);
+  if (idx < 0) return;
+
+  if (draftState.equipo[idx]) return;
+  if (!puedeIrEnSlot(jugador, slotKey)) return;
+
+  const equipo = draftState.equipoSorteado;
+  draftState.equipo[idx] = {
+    ...jugador,
+    pos: slotKey,
+    equipoOrigen: equipo.nombre,
+    equipoEmoji: equipo.emoji
+  };
+
+  renderSlotOcupado(idx, jugador);
+  draftState.jugadorSeleccionado = null;
+  actualizarCajaSeleccion();
+  actualizarMarcadoJugadores();
+  actualizarSlotsCompatibles();
+
+  draftState.paso++;
+
+  if (draftState.paso >= 5) {
+    document.getElementById('btn-dado').disabled = true;
+    setTimeout(() => iniciarTorneo(), 400);
+    return;
+  }
+
+  draftState.equipoSorteado = null;
+  document.getElementById('equipo-sorteado-nombre').textContent = '— — —';
+  document.getElementById('equipo-sorteado-desc').textContent = 'Tirá el dado para ver el próximo equipo';
+  document.getElementById('instruccion-sorteo').textContent = 'Tirá de nuevo: sale otro equipo y elegís un solo jugador.';
+  document.getElementById('jugadores-scroll').innerHTML = `
+    <div style="text-align:center;color:var(--texto-suave);font-size:0.85rem;padding:2rem 1rem;">
+      Tirá el dado para ver los jugadores disponibles
+    </div>`;
+  document.getElementById('btn-dado').disabled = false;
+  document.getElementById('dado-texto').textContent = 'Tirar el dado';
+  document.getElementById('dado-emoji').textContent = '🎲';
+
+  actualizarDraftHeader();
+}
+
+// ══════════════════════════════════════════════════════
+//  TORNEO
+// ══════════════════════════════════════════════════════
+
+const RONDA_LABELS = ['Cuartos de Final', 'Semifinal', 'Final'];
+
+function iniciarTorneo() {
+  const miEquipo = {
+    nombre: "Tu Equipo",
+    emoji: "⚽",
+    jugadores: draftState.equipo,
+    rating: Math.round(draftState.equipo.reduce((s, j) => s + j.rating, 0) / 5)
+  };
+
+  torneoState.miEquipo = miEquipo;
+
+  const rivalesMezclados = [...RIVALES].sort(() => Math.random() - 0.5);
+
+  torneoState.bracket = [
+    [
+      { local: miEquipo, visitante: rivalesMezclados[0], resultado: null },
+      { local: rivalesMezclados[1], visitante: rivalesMezclados[2], resultado: null },
+      { local: rivalesMezclados[3], visitante: rivalesMezclados[4], resultado: null },
+      { local: rivalesMezclados[5], visitante: rivalesMezclados[6], resultado: null }
+    ],
+    [null, null],
+    [null]
+  ];
+
+  torneoState.rondaActual = 0;
+  torneoState.partidoActual = 0;
+
+  irA('p-torneo');
+  renderTorneo();
+}
+
+function renderTorneo() {
+  const ronda = torneoState.rondaActual;
+  const partido = torneoState.bracket[ronda][0];
+
+  document.getElementById('torneo-header-sub').textContent = RONDA_LABELS[ronda];
+  document.getElementById('torneo-ronda-badge').textContent = RONDA_LABELS[ronda];
+  document.getElementById('torneo-titulo').textContent = RONDA_LABELS[ronda];
+  document.getElementById('torneo-subtitulo').textContent = ronda === 2
+    ? '¡La gran final! ¿Podés ganarla?'
+    : 'Ganás y avanzás. Perdés y te vas.';
+
+  renderBracket();
+
+  document.getElementById('pv-local').textContent = `${torneoState.miEquipo.emoji} ${torneoState.miEquipo.nombre}`;
+  document.getElementById('pv-rival').textContent = `${partido.visitante.emoji} ${partido.visitante.nombre}`;
+
+  const preview = document.getElementById('pv-equipos-preview');
+  preview.innerHTML = `
+    <div class="equipo-preview">
+      <div class="equipo-preview-titulo">${partido.visitante.emoji} ${partido.visitante.nombre}</div>
+      <div class="preview-jugador"><span>${partido.visitante.desc}</span></div>
+      <div class="preview-jugador"><span>Nivel del equipo:</span><span class="preview-rating">${partido.visitante.rating}/100</span></div>
+    </div>
+  `;
+
+  document.getElementById('btn-jugar-partido').textContent = `Jugar contra ${partido.visitante.nombre} ⚽`;
+}
+
+function renderBracket() {
+  const bracketEl = document.getElementById('bracket-visual');
+  const rondaNombres = ['Cuartos', 'Semis', 'Final'];
+
+  bracketEl.innerHTML = torneoState.bracket.map((ronda, ri) => {
+    const partidos = ronda.map((p, pi) => {
+      if (!p) {
+        return `<div class="partido-bracket"><div class="bracket-pendiente">—</div></div>`;
+      }
+      if (!p.resultado) {
+        const esActual = ri === torneoState.rondaActual && pi === 0;
+        return `<div class="partido-bracket" style="${esActual ? 'border-color:var(--verde-ui);border-width:2px' : ''}">
+          <div class="equipo-bracket">${p.local.emoji} ${p.local.nombre}</div>
+          <div class="equipo-bracket">${p.visitante.emoji} ${p.visitante.nombre}</div>
+        </div>`;
+      }
+      const r = p.resultado;
+      const localGano = r.golesLocal > r.golesVisitante;
+      return `<div class="partido-bracket">
+        <div class="equipo-bracket ${localGano ? 'ganador' : 'perdedor'}">${p.local.emoji} ${p.local.nombre} <span class="bracket-gol">${r.golesLocal}</span></div>
+        <div class="equipo-bracket ${!localGano ? 'ganador' : 'perdedor'}">${p.visitante.emoji} ${p.visitante.nombre} <span class="bracket-gol">${r.golesVisitante}</span></div>
+      </div>`;
+    }).join('');
+    return `<div class="ronda"><div class="ronda-titulo">${rondaNombres[ri]}</div>${partidos}</div>`;
+  }).join('');
+}
+
+function jugarPartido() {
+  const ronda = torneoState.rondaActual;
+  const partido = torneoState.bracket[ronda][0];
+  const miEquipo = torneoState.miEquipo;
+
+  const resUsuario = simularPartido(miEquipo.rating, partido.visitante.rating);
+  partido.resultado = resUsuario;
+
+  for (let i = 1; i < torneoState.bracket[ronda].length; i++) {
+    const p = torneoState.bracket[ronda][i];
+    if (p && !p.resultado) {
+      p.resultado = simularPartido(p.local.rating, p.visitante.rating);
+    }
+  }
+
+  const gane = resUsuario.golesLocal > resUsuario.golesVisitante;
+  const rondaLabel = RONDA_LABELS[ronda];
+
+  document.getElementById('res-ronda-label').textContent = rondaLabel;
+  document.getElementById('res-emoji').textContent = gane ? (ronda === 2 ? '🏆' : '✅') : '😞';
+  document.getElementById('res-titulo').textContent = gane ? (ronda === 2 ? '¡Campeones!' : '¡Pasaron de ronda!') : 'Eliminados';
+  document.getElementById('res-marcador').textContent = `${resUsuario.golesLocal} – ${resUsuario.golesVisitante}`;
+  document.getElementById('res-marcador').className = `resultado-marcador ${gane ? 'resultado-win' : 'resultado-lose'}`;
+  document.getElementById('res-frase').textContent = gane
+    ? FRASES.gane[Math.floor(Math.random() * FRASES.gane.length)]
+    : FRASES.perdi[Math.floor(Math.random() * FRASES.perdi.length)];
+
+  if (gane) {
+    const mvp = miEquipo.jugadores[Math.floor(Math.random() * miEquipo.jugadores.length)];
+    document.getElementById('res-mvp-box').style.display = 'block';
+    document.getElementById('res-mvp-nombre').textContent = mvp.nombre;
+    document.getElementById('res-mvp-desc').textContent = FRASES.mvp[Math.floor(Math.random() * FRASES.mvp.length)];
+    document.getElementById('btn-continuar').style.display = 'inline-block';
+    document.getElementById('btn-continuar').textContent = ronda === 2 ? 'Ver el trofeo 🏆' : 'Continuar al siguiente →';
+  } else {
+    document.getElementById('res-mvp-box').style.display = 'none';
+    document.getElementById('btn-continuar').style.display = 'none';
+  }
+
+  irA('p-resultado');
+}
+
+function simularPartido(ratingLocal, ratingVisitante) {
+  const ventaja = (ratingLocal - ratingVisitante) / 100;
+  const probGanar = 0.45 + ventaja * 0.6;
+  const azar = Math.random();
+
+  let golesLocal, golesVisitante;
+  if (azar < probGanar) {
+    golesLocal = Math.floor(Math.random() * 4) + 1;
+    golesVisitante = Math.max(0, golesLocal - Math.floor(Math.random() * 3) - 1);
+  } else if (azar < probGanar + 0.15) {
+    golesLocal = Math.floor(Math.random() * 3) + 1;
+    golesVisitante = golesLocal;
+    if (Math.random() < 0.5 + ventaja * 0.3) {
+      golesLocal++;
+    } else {
+      golesVisitante++;
+    }
+  } else {
+    golesVisitante = Math.floor(Math.random() * 4) + 1;
+    golesLocal = Math.max(0, golesVisitante - Math.floor(Math.random() * 3) - 1);
+  }
+  return { golesLocal, golesVisitante };
+}
+
+function continuar() {
+  const ronda = torneoState.rondaActual;
+
+  if (ronda === 2) {
+    mostrarCampeon();
+    return;
+  }
+
+  const siguienteRonda = ronda + 1;
+  const partidos = torneoState.bracket[ronda];
+  const ganadores = partidos.map(p => {
+    if (!p || !p.resultado) return null;
+    return p.resultado.golesLocal >= p.resultado.golesVisitante ? p.local : p.visitante;
+  });
+
+  const newPartidos = [];
+  for (let i = 0; i < ganadores.length; i += 2) {
+    if (ganadores[i] && ganadores[i + 1]) {
+      const localEsUsuario = ganadores[i].nombre === torneoState.miEquipo.nombre;
+      newPartidos.push({
+        local: localEsUsuario ? ganadores[i] : ganadores[i + 1],
+        visitante: localEsUsuario ? ganadores[i + 1] : ganadores[i],
+        resultado: null
+      });
+    }
+  }
+
+  torneoState.bracket[siguienteRonda] = newPartidos;
+  torneoState.rondaActual = siguienteRonda;
+  torneoState.partidoActual = 0;
+
+  irA('p-torneo');
+  renderTorneo();
+}
+
+function mostrarCampeon() {
+  const eq = torneoState.miEquipo;
+  document.getElementById('campeon-sub').textContent = `${eq.nombre} ganó el torneo entero. Los pibes no tienen techo.`;
+
+  const detalle = eq.jugadores.map(j =>
+    `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.1)">
+      <span>${j.equipoEmoji || "⚽"} ${j.nombre}</span>
+      <span style="opacity:0.7">${j.pos} · ${j.rating}</span>
+    </div>`
+  ).join('');
+  document.getElementById('campeon-equipo-detalle').innerHTML = `<div class="campeon-equipo-titulo">Tu equipo campeón</div>${detalle}`;
+
+  irA('p-campeon');
+}
+
+// ══════════════════════════════════════════════════════
+//  ARRANQUE
+// ══════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  configurarSlotsInteraccion();
+  for (let i = 0; i < 5; i++) renderSlotVacio(i);
+  actualizarDraftHeader();
+  actualizarCajaSeleccion();
+  actualizarSlotsCompatibles();
+});
+</script>
+
+</body>
+</html>
